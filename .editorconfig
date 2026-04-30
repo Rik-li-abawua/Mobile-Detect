@@ -5,4 +5,73 @@ insert_final_newline = true
 [*.php]
 indent_style = space
 indent_size = 4
-max_line_length = 140
+max_line_length = 140# Crear y eliminar ramas en tu repositorio
+
+Puedes crear o eliminar ramas directamente en GitHub.
+
+## Cómo crear una rama
+
+Puedes crear una rama de diferentes maneras en GitHub.
+
+> \[!NOTE]
+> Solo puede crear una rama en un repositorio en el que tenga acceso de inserción.
+
+### Creación de una rama en la visión general de las ramas
+
+1. En GitHub, navegue hasta la página principal del repositorio.
+2. En la vista de árbol de archivos de la izquierda, selecciona el menú desplegable de ramas de <svg version="1.1" width="16" height="16" viewBox="0 0 16 16" class="octicon octicon-git-branch" aria-label="git-branch" role="img"><path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"></path></svg> y, a continuación, haz clic en **View all branches**. También puedes encontrar el menú desplegable de ramas en la parte superior del editor de archivos integrado.
+
+   ![Captura de pantalla de la vista de árbol de archivos de un repositorio. Un menú desplegable para cambiar de rama se expande y se destaca en naranja oscuro.](/assets/images/help/repository/file-tree-view-branch-dropdown-expanded.png)
+3. Haz clic en **Nueva rama**.
+
+   ![Captura de pantalla de la página "Ramas" de un repositorio. Un botón verde, con la etiqueta "Nueva rama", está resaltado con un contorno naranja.](/assets/images/help/branches/new-branch-button.png)
+4. En "Nombre de rama", escriba un nombre para la rama.
+5. En "Origen de la rama", elija un origen para su rama.
+   * Si el repositorio es una bifurcación, seleccione el menú desplegable del repositorio y haga clic en la bifurcación o en el repositorio ascendente.
+   * Seleccione el menú desplegable de ramas y haga clic en una rama.
+6. Haz clic en **Crear rama**.
+
+### Creación de una rama mediante la lista desplegable de ramas
+
+1. En GitHub, navegue hasta la página principal del repositorio.
+
+2. Selecciona el menú desplegable de ramas <svg version="1.1" width="16" height="16" viewBox="0 0 16 16" class="octicon octicon-git-branch" aria-label="git-branch" role="img"><path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"></path></svg> en la vista de árbol de archivos o en la parte superior del editor de archivos integrado.
+
+   ![Captura de pantalla de la vista de árbol de archivos de un repositorio. Un menú desplegable para ramas aparece con un contorno naranja oscuro.](/assets/images/help/branches/file-tree-view-branch-dropdown.png)
+
+3. Opcionalmente, si deseas crear la nueva rama desde una rama distinta de la rama predeterminada del repositorio, haz clic en otra rama y, a continuación, vuelve a seleccionar el menú desplegable de ramas.
+
+4. En la sección "Buscar o crear una rama..." campo de texto, escriba un nombre único para la nueva rama y, a continuación, haga clic en **Crear rama**.
+
+   ![Captura de pantalla del menú desplegable del selector de rama "Crear rama: nueva rama" está resaltada con un contorno naranja.](/assets/images/help/branches/create-branch-text.png)
+
+### Creación de una rama para una incidencia
+
+Puedes crear una rama para trabajar en una incidencia directamente desde la página de la incidencia y empezar de inmediato. Para más información, consulta [Creación de una rama para trabajar en una incidencia](/es/issues/tracking-your-work-with-issues/creating-a-branch-for-an-issue).
+
+## Cómo eliminar una rama
+
+Puedes hacer que se eliminen automáticamente ramas centrales después de que se fusionen solicitudes de extracción en tu repositorio. Para más información, consulta [La gestión de la eliminación automática de ramas](/es/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-the-automatic-deletion-of-branches).
+
+> \[!NOTE]
+> Si la rama que quieres borrar es la predeterminada del repositorio, debes elegir una rama predeterminada nueva antes de que la borres. Para más información, consulta [Cambiar la rama predeterminada](/es/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/changing-the-default-branch).
+
+Si la rama que quieres borrar está asociada con una solicitud de cambios abierta, debes fusionar o cerrar dicha solicitud antes de borrar la rama. Para más información, consulta [Combinación de una solicitud de incorporación de cambios](/es/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request) o [Cerrar una solicitud de extracción](/es/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/closing-a-pull-request).
+
+1. En GitHub, navegue hasta la página principal del repositorio.
+2. En la vista de árbol de archivos de la izquierda, selecciona el menú desplegable de ramas de <svg version="1.1" width="16" height="16" viewBox="0 0 16 16" class="octicon octicon-git-branch" aria-label="git-branch" role="img"><path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"></path></svg> y, a continuación, haz clic en **View all branches**. También puedes encontrar el menú desplegable de ramas en la parte superior del editor de archivos integrado.
+
+   ![Captura de pantalla de la vista de árbol de archivos de un repositorio. Un menú desplegable para cambiar de rama se expande y se destaca en naranja oscuro.](/assets/images/help/repository/file-tree-view-branch-dropdown-expanded.png)
+3. Junto a la rama que quieres borrar, haz clic en <svg version="1.1" width="16" height="16" viewBox="0 0 16 16" class="octicon octicon-trash" aria-label="The trash icon" role="img"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"></path></svg> .
+
+   ![Captura de pantalla de una rama en la lista de ramas. Un icono de papelera está resaltado con un contorno naranja.](/assets/images/help/branches/branches-delete.png)
+4. Si la rama está asociada con al menos una solicitud de incorporación de cambios abierta, la eliminación de la rama cerrará las solicitudes de incorporación de cambios. Lea la advertencia y haga clic en **Eliminar**.
+
+Si borras una rama de encabezado después de haber fusionado su solicitud de extracción, GitHub verificará cualquier solicitud de extracción abierta en el mismo repositorio que especifique la rama borrada como su rama base. GitHub actualiza automáticamente cualquier solicitud de extracción, cambiando su rama base a la rama base de la solicitud de extracción que se ha fusionado.
+Para obtener más información, consulte [Acerca de las ramas](/es/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches#working-with-branches).
+
+## Información adicional
+
+* [Acerca de las ramas](/es/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches)
+* [Ver las ramas en tu repositorio](/es/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/viewing-branches-in-your-repository)
+* [Eliminar y restaurar ramas en una solicitud de extracción](/es/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/deleting-and-restoring-branches-in-a-pull-request)1.5.75.751.5.75.7561031
