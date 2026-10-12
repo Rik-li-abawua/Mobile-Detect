@@ -19,3 +19,122 @@
     ]
   }
 }
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="aulafuente-scaffold"
+
+if [ -e "$ROOT" ]; then
+  echo "ERROR: $ROOT ya existe. Revísalo antes de continuar."
+  exit 1
+fi
+
+mkdir -p \
+  "$ROOT/src/app/api/health" \
+  "$ROOT/src/lib/ai" \
+  "$ROOT/src/lib/supabase" \
+  "$ROOT/tests" \
+  "$ROOT/supabase/migrations"
+
+cat > "$ROOT/package.json" <<'EOF'
+{
+  "name": "aulafuente-scaffold",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.49.1",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  }
+}
+EOF
+
+cat > "$ROOT/tsconfig.json" <<'EOF'
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "es2022"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+EOF
+
+cat > "$ROOT/next.config.ts" <<'EOF'
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  poweredByHeader: false
+};
+
+export default nextConfig;
+EOF
+
+cat > "$ROOT/vitest.config.ts" <<'EOF'
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    environment: "node",
+    restoreMocks: true
+  }
+});
+EOF
+
+cat > "$ROOT/.gitignore" <<'EOF'
+node_modules
+.next
+.env
+.env.local
+.env.*.local
+coverage
+*.log
+EOF
+
+cat > "$ROOT/.env.example" <<'EOF'
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-private-key
+
+# OpenAI / AI Provider Configuration
+OPENAI_API_KEY=your-openai-api-key
+
+# Deployment Environment
+NODE_ENV=development
+EOF
+
+echo "✅ Scaffold para '$ROOT' creado con éxito."
+echo "Para comenzar, ejecuta:"
+echo "  cd $ROOT"
+echo "  npm install"
