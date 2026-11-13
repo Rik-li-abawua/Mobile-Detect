@@ -19,7 +19,7 @@
  * @author  Nick Ilyin <nick.ilyin@gmail.com>
  * @author: Victor Stanciu <vic.stanciu@gmail.com> (original author)
  *
- * @version 4.10.0
+ * @version 4.11.0
  */
 
 declare(strict_types=1);
@@ -242,7 +242,7 @@ class MobileDetect
     /**
      * Stores the version number of the current release.
      */
-    protected string $VERSION = '4.10.0';
+    protected string $VERSION = '4.11.0';
 
     protected array $config = [
         // Auto-initialization on HTTP headers from $_SERVER['HTTP...']
@@ -259,6 +259,11 @@ class MobileDetect
         // Cache TTL
         // @var null|int|\DateInterval
         'cacheTtl' => 86400,
+        // Trust the Amazon CloudFront viewer headers (CloudFront-Is-Mobile-Viewer, CloudFront-Is-Tablet-Viewer).
+        // When present they replace the User-Agent. Set this to false when the app is not behind CloudFront:
+        // any client can send these headers.
+        // @var boolean
+        'trustCloudFrontHeaders' => true,
     ];
 
     /**
@@ -626,7 +631,9 @@ class MobileDetect
         // http://www.fly-phone.com/devices/tablets/ ; http://www.fly-phone.com/service/
         'FlyTablet'         => 'IQ310|Fly Vision',
         // http://www.bqreaders.com/gb/tablets-prices-sale.html
-        'bqTablet'          => 'Android.*(bq)?.*\b(Elcano|Curie|Edison|Maxwell|Kepler|Pascal|Tesla|Hypatia|Platon|Newton|Livingstone|Cervantes|Avant|Aquaris ([E|M]10|M8))\b|Maxwell.*Lite|Maxwell.*Plus',
+        // "bq " is required in front of the generic model names (Edison, Tesla, Newton, ...);
+        // Aquaris and Edison 3 tablets and Maxwell Lite/Plus do not carry the brand in the User-Agent.
+        'bqTablet'          => 'Android.*\bbq (Elcano|Curie|Edison|Maxwell|Kepler|Pascal|Tesla|Hypatia|Platon|Newton|Livingstone|Cervantes|Avant)\b|Android.*\b(Aquaris ([EM]10|M8)|Edison 3)\b|Maxwell.*Lite|Maxwell.*Plus',
         // http://www.huaweidevice.com/worldwide/productFamily.do?method=index&directoryId=5011&treeId=3290
         // http://www.huaweidevice.com/worldwide/downloadCenter.do?method=index&directoryId=3372&treeId=0&tb=1&type=software (including legacy tablets)
         'HuaweiTablet'      => 'MediaPad|MediaPad 7 Youth|IDEOS S7|S7-201c|S7-202u|S7-101|S7-103|S7-104|S7-105|S7-106|S7-201|S7-Slim|M2-A01L|BAH-L09|BAH-W09|AGS-L09|CMR-AL19|KOB2-L09|BG2-U01|BG2-W09|BG2-U03|AGS-W09',
@@ -1047,6 +1054,14 @@ class MobileDetect
 
     /**
      * Construct an instance of this class.
+     *
+     * The bundled in-memory `Detection\Cache\Cache` is bounded by default
+     * (see `Cache::DEFAULT_MAX_ENTRIES`) to prevent unbounded growth in
+     * long-running PHP runtimes where one instance is reused across many
+     * distinct User-Agents (see GHSA-mgj4-qjmw-v56v). To tune the cap, pass
+     * `new Cache($n)` explicitly. To use a different backend (Redis, APCu,
+     * Memcached, Filesystem), inject any PSR-16 `CacheInterface`; the
+     * adapter's eviction policy is then the operator's responsibility.
      */
     public function __construct(
         ?CacheInterface $cache = null,
@@ -1141,8 +1156,11 @@ class MobileDetect
 
         // Override User-Agent string if 'Amazon Cloudfront' specific HTTP headers are present.
         if (
-            $this->hasHttpHeader(static::$knownCloudFrontHeaders[0]) ||
-            $this->hasHttpHeader(static::$knownCloudFrontHeaders[1])
+            $this->config['trustCloudFrontHeaders'] &&
+            (
+                $this->hasHttpHeader(static::$knownCloudFrontHeaders[0]) ||
+                $this->hasHttpHeader(static::$knownCloudFrontHeaders[1])
+            )
         ) {
             $this->setUserAgent(static::$cloudFrontUA);
         }
@@ -1240,6 +1258,11 @@ class MobileDetect
 
     /**
      * Set the User-Agent to be used.
+     *
+     * Only the User-Agent is replaced. HTTP headers already stored on this instance
+     * (from the constructor's auto-init or from setHttpHeaders()) are kept and keep
+     * influencing isMobile() and the cache key. When one instance serves many HTTP
+     * requests, call setHttpHeaders() with the current request's headers instead.
      *
      * @param string $userAgent The User-Agent string.
      * @return string
@@ -1637,7 +1660,10 @@ class MobileDetect
 
     /**
      * Prepare the version number.
-     * @todo Remove the error suppression from str_replace() call.
+     *
+     * Only the leading numeric part is converted ("2.6.21.2152" -> 2.6212152, "4.3.1_r2" -> 4.31).
+     * The token is never handed to a bare float cast: PHP would read "9e999" as exponent notation
+     * and turn it, or an over-long digit run, into INF, which cannot be JSON-encoded or stored.
      *
      * @param string $ver The string version, like "2.6.21.2152";
      * @return float
@@ -1651,7 +1677,13 @@ class MobileDetect
             $arrVer[1] = str_replace('.', '', $arrVer[1]); // @todo: treat strings versions.
         }
 
-        return (float) implode('.', $arrVer);
+        if (!preg_match('/^\d+(?:\.\d+)?/', implode('.', $arrVer), $match)) {
+            return 0.0;
+        }
+
+        $float = (float) $match[0];
+
+        return is_finite($float) ? $float : 0.0;
     }
 
     /**

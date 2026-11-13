@@ -469,4 +469,62 @@ final class CacheTest extends TestCase
         $this->expectException(CacheInvalidArgumentException::class);
         $this->cache->set(['notAKey'], 'value');
     }
+
+    /**
+     * Regression test for GHSA-mgj4-qjmw-v56v.
+     *
+     * Inserting more unique keys than the default cap must not grow the cache
+     * past the cap. This is the core guarantee that prevents unbounded memory
+     * growth in long-running workers when keys are influenced by external input
+     * (e.g. attacker-supplied User-Agent strings).
+     */
+    public function testCacheRespectsMaxEntriesDefault(): void
+    {
+        $this->assertSame(Cache::DEFAULT_MAX_ENTRIES, $this->cache->getMaxEntries());
+
+        for ($i = 0; $i < Cache::DEFAULT_MAX_ENTRIES + 500; $i++) {
+            $this->cache->set('k_' . $i, $i, 3600);
+        }
+
+        $this->assertCount(Cache::DEFAULT_MAX_ENTRIES, $this->cache->getKeys());
+    }
+
+    public function testCacheEvictsOldestEntryFirstWhenFull(): void
+    {
+        $cache = new Cache(2);
+
+        $cache->set('a', 1, 3600);
+        $cache->set('b', 2, 3600);
+        $cache->set('c', 3, 3600); // forces eviction of 'a'
+
+        $this->assertSame(['b', 'c'], $cache->getKeys());
+        $this->assertNull($cache->get('a'));
+        $this->assertSame(2, $cache->get('b'));
+        $this->assertSame(3, $cache->get('c'));
+    }
+
+    public function testCacheConstructorAcceptsCustomMaxEntries(): void
+    {
+        $cache = new Cache(5);
+        $this->assertSame(5, $cache->getMaxEntries());
+
+        for ($i = 0; $i < 10; $i++) {
+            $cache->set('k_' . $i, $i, 3600);
+        }
+
+        $this->assertCount(5, $cache->getKeys());
+    }
+
+    public function testOverwriteExistingKeyDoesNotTriggerEviction(): void
+    {
+        $cache = new Cache(2);
+
+        $cache->set('a', 1, 3600);
+        $cache->set('b', 2, 3600);
+        $cache->set('a', 99, 3600); // overwrite, must not evict 'b'
+
+        $this->assertCount(2, $cache->getKeys());
+        $this->assertSame(99, $cache->get('a'));
+        $this->assertSame(2, $cache->get('b'));
+    }
 }

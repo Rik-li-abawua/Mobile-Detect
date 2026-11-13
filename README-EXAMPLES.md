@@ -161,12 +161,17 @@ $detect->is('tablet');     // Same as $detect->isTablet()
 
 ```php
 use Detection\MobileDetect;
+use Detection\Cache\Cache;
 use Psr\SimpleCache\CacheInterface;
 
 // Use any PSR-16 compatible cache
 $redisCache = new YourRedisCacheAdapter();
 
 $detect = new MobileDetect($redisCache);
+
+// Or tune the bundled in-memory cache's max entries
+// (default is 1000; entries beyond the cap are evicted FIFO).
+$detect = new MobileDetect(new Cache(5000));
 ```
 
 ### Custom Cache Key Function
@@ -204,116 +209,50 @@ $detect = new MobileDetect(null, [
 
 ## Long-Running Processes
 
-When using MobileDetect in CLI scripts, workers, or daemons that process many different User-Agents, you should periodically clean up expired cache entries to prevent memory growth.
+When using MobileDetect in CLI scripts, workers, or daemons (RoadRunner, Laravel Octane, FrankenPHP worker mode, Swoole, 
+ReactPHP, queue workers) that reuse a single `MobileDetect` instance across many distinct User-Agents, 
+the in-memory cache would otherwise grow without bound.
+
+**Default-safe since 4.11.0**: the bundled `Detection\Cache\Cache` enforces a hard cap (1000 entries by default, FIFO eviction).  
+Tune via `new Cache($n)` for higher legitimate UA cardinality, or inject a different PSR-16 adapter (Redis, APCu, Memcached, Filesystem) — 
+that adapter's eviction policy is then the operator's responsibility. Note that `evictExpired()` only removes entries whose TTL has elapsed; 
+under the default 86 400 s TTL it does **not** bound cache size by cardinality.  
+
+Use the `$maxEntries` cap (or `clear()`) for that.
 
 ### Worker Example
+
+`setUserAgent()` replaces only the User-Agent. The HTTP headers captured when the instance was created
+(`Accept`, `X-WAP-Profile`, `X-OperaMini-Phone-UA`, the CloudFront viewer headers, ...) stay in place and keep
+deciding `isMobile()` and the cache key for every later call. In an HTTP worker, either create a new instance
+per request and share one `Cache`, or reset the headers of the reused instance with `setHttpHeaders()` (it also
+derives the User-Agent from the headers you pass).
 
 ```php
 use Detection\MobileDetect;
 use Detection\Cache\Cache;
 
-$detect = new MobileDetect();
-$cache = $detect->getCache();
+// HTTP worker (RoadRunner, Octane, FrankenPHP, Swoole): a fresh instance per request, one shared cache.
+$cache = new Cache();
 
-$iterationCount = 0;
+while ($request = getNextRequest()) {
+    $detect = new MobileDetect($cache, ['autoInitOfHttpHeaders' => false]);
+    // PHP-style server array of the current request (HTTP_USER_AGENT, HTTP_ACCEPT, ...),
+    // e.g. $request->server->all() in Symfony/Laravel.
+    $detect->setHttpHeaders($request->server->all());
+
+    $isMobile = $detect->isMobile();
+    $isTablet = $detect->isTablet();
+}
+
+// Queue worker: User-Agent strings only, no HTTP headers involved, so one instance can be reused.
+$detect = new MobileDetect(null, ['autoInitOfHttpHeaders' => false]);
 
 while ($userAgent = getNextUserAgentFromQueue()) {
     $detect->setUserAgent($userAgent);
 
     $isMobile = $detect->isMobile();
     $isTablet = $detect->isTablet();
-
-    // Process the result...
-    processDevice($userAgent, $isMobile, $isTablet);
-
-    $iterationCount++;
-
-    // Periodically clean up expired cache entries
-    if ($iterationCount % 1000 === 0 && $cache instanceof Cache) {
-        $evicted = $cache->evictExpired();
-        echo "Evicted $evicted expired cache entries\n";
-    }
-}
-```
-
-### Batch Processing Example
-
-```php
-use Detection\MobileDetect;
-use Detection\Cache\Cache;
-
-$detect = new MobileDetect();
-
-// Process a large batch of User-Agents
-$userAgents = file('user-agents.txt', FILE_IGNORE_NEW_LINES);
-
-foreach ($userAgents as $index => $ua) {
-    $detect->setUserAgent($ua);
-
-    $results[] = [
-        'ua' => $ua,
-        'mobile' => $detect->isMobile(),
-        'tablet' => $detect->isTablet(),
-    ];
-}
-
-// Clean up after batch processing
-$cache = $detect->getCache();
-if ($cache instanceof Cache) {
-    $cache->evictExpired();
-    // Or clear entirely if you're done
-    $cache->clear();
-}
-```
-
-## Framework Integration
-
-### Laravel Middleware Example
-
-```php
-namespace App\Http\Middleware;
-
-use Closure;
-use Detection\MobileDetect;
-use Illuminate\Http\Request;
-
-class DetectMobileDevice
-{
-    public function handle(Request $request, Closure $next)
-    {
-        $detect = new MobileDetect();
-
-        $request->attributes->set('is_mobile', $detect->isMobile());
-        $request->attributes->set('is_tablet', $detect->isTablet());
-
-        return $next($request);
-    }
-}
-```
-
-### Symfony Service Example
-
-```php
-// config/services.yaml
-services:
-    Detection\MobileDetect:
-        public: true
-```
-
-```php
-// In a controller
-use Detection\MobileDetect;
-
-class MyController
-{
-    public function index(MobileDetect $detect)
-    {
-        if ($detect->isMobile()) {
-            return $this->render('mobile/index.html.twig');
-        }
-
-        return $this->render('desktop/index.html.twig');
-    }
 }
 ```
 
@@ -336,6 +275,9 @@ $detect = new MobileDetect();
 if ($detect->isMobile()) {
     // Mobile device detected via CloudFront
 }
+
+// Not behind CloudFront? Any client can send these headers, so turn the override off.
+$detect = new MobileDetect(null, ['trustCloudFrontHeaders' => false]);
 ```
 
 ## Debugging

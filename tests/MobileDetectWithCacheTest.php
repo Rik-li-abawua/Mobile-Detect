@@ -130,4 +130,29 @@ final class MobileDetectWithCacheTest extends TestCase
         $detect->isMobile();
         $detect->isMobile();
     }
+
+    /**
+     * Regression test for GHSA-mgj4-qjmw-v56v.
+     *
+     * Reusing a single MobileDetect instance across many distinct User-Agents
+     * (the documented long-running worker pattern) must not grow the in-memory
+     * cache without bound. The bundled Cache caps itself at
+     * Cache::DEFAULT_MAX_ENTRIES with FIFO eviction.
+     *
+     * @throws MobileDetectException
+     */
+    public function testMobileDetectCacheStaysBoundedUnderUniqueUserAgents(): void
+    {
+        $detect = new MobileDetect(null, ['autoInitOfHttpHeaders' => false]);
+
+        for ($i = 0; $i < 2000; $i++) {
+            $detect->setUserAgent('Mozilla/5.0 Android attacker-' . str_pad((string) $i, 8, '0', STR_PAD_LEFT));
+            $detect->isMobile();
+            $detect->isTablet();
+        }
+
+        $cache = $detect->getCache();
+        $this->assertInstanceOf(Cache::class, $cache);
+        $this->assertLessThanOrEqual(Cache::DEFAULT_MAX_ENTRIES, count($cache->getKeys()));
+    }
 }
